@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ARIBU - Mi Cuerpo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sky-top: #2b1055;
+            --sky-mid: #75225b;
+            --sky-bot: #e07553;
+            --sun-color: #ffd56b;
+            --mountain-back: #451b4a;
+            --mountain-mid: #2c0e35;
+            --mountain-front: #16051c;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(to bottom, var(--sky-top), var(--sky-mid), var(--sky-bot));
+            touch-action: none; /* Previene scroll en moviles al arrastrar */
+        }
+
+        h1, h2, h3, .kid-font {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .scenery-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .sun {
+            position: absolute;
+            bottom: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            height: 250px;
+            background: var(--sun-color);
+            border-radius: 50%;
+            box-shadow: 0 0 100px var(--sun-color);
+            opacity: 0.8;
+            animation: pulse 10s infinite alternate;
+        }
+
+        .mountain {
+            position: absolute;
+            bottom: 0;
+            width: 200vw;
+            height: 50vh;
+            background-size: contain;
+            background-repeat: repeat-x;
+        }
+
+        .mt-back {
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg"><path d="M0,300 L0,200 L150,100 L300,250 L450,50 L600,200 L750,150 L900,280 L1000,100 L1000,300 Z" fill="%23451b4a"/></svg>');
+            animation: pan 120s linear infinite;
+            bottom: 10%;
+            z-index: 1;
+        }
+
+        .mt-mid {
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg"><path d="M0,300 L0,250 L200,150 L350,280 L500,180 L650,260 L800,120 L950,250 L1000,200 L1000,300 Z" fill="%232c0e35"/></svg>');
+            animation: pan 90s linear infinite;
+            bottom: 5%;
+            z-index: 2;
+        }
+
+        .mt-front {
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg"><path d="M0,300 L0,280 L100,200 L250,290 L400,220 L550,280 L700,190 L850,290 L1000,250 L1000,300 Z" fill="%2316051c"/></svg>');
+            animation: pan 60s linear infinite;
+            bottom: 0;
+            z-index: 3;
+        }
+
+        @keyframes pan {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); opacity: 0.7; }
+            100% { transform: translateX(-50%) scale(1.05); opacity: 0.9; }
+        }
+
+        .screen {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        .screen.active { display: flex; }
+
+        .btn {
+            background: linear-gradient(145deg, #ff9a76, #ff7b54);
+            border: 4px solid #fff;
+            border-radius: 999px;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .btn:hover, .btn:active {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.4);
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .card {
+            background: white;
+            border: 3px solid #ff7b54;
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c0e35;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            position: absolute;
+            transition: transform 0.1s;
+            text-align: center;
+            min-width: 120px;
+            z-index: 50;
+        }
+        .card:active { cursor: grabbing; }
+        .card.dragging {
+            transform: scale(1.1);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            opacity: 0.9;
+            transition: none; /* Elimina lag al mover */
+            z-index: 100;
+        }
+
+        .drop-zone {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.4);
+            border: 3px dashed white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s;
+        }
+        .drop-zone.hover {
+            background: rgba(255, 213, 107, 0.8);
+            border-color: #ff7b54;
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+        .drop-zone.matched {
+            background: #a8e6cf;
+            border: none;
+            animation: pop 0.5s ease;
+        }
+        .drop-zone.matched::after {
+            content: '✓';
+            color: #1a5c40;
+            font-size: 24px;
+            font-weight: bold;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes pop {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.5); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .svg-body {
+            height: 60vh;
+            max-height: 500px;
+            filter: drop-shadow(0 0 20px rgba(255,213,107,0.2));
+            z-index: 5;
+        }
+
+        #particle-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scenery-container">
+        <div class="sun"></div>
+        <div class="mountain mt-back"></div>
+        <div class="mountain mt-mid"></div>
+        <div class="mountain mt-front"></div>
+    </div>
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Botón global de música -->
+    <button id="music-btn" class="absolute top-4 right-4 z-50 glass-panel p-3 text-white rounded-full flex items-center justify-center shadow-lg" onclick="toggleMusic()">
+        <svg id="music-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+    </button>
+
+    <div id="screen-menu" class="screen active">
+        <h1 class="text-6xl text-white mb-2 kid-font text-center drop-shadow-lg" style="text-shadow: 0 4px 10px rgba(0,0,0,0.5);">Mi Cuerpo</h1>
+        <h2 class="text-2xl text-yellow-200 mb-10 kid-font text-center drop-shadow-md">My Body / Nõhõ (Nativo)</h2>
+        
+        <div class="flex flex-col gap-6 w-64">
+            <button class="btn kid-font" onclick="showScreen('screen-lang-select')">Jugar</button>
+            <button class="btn kid-font" onclick="showScreen('screen-credits')" style="background: linear-gradient(145deg, #75225b, #451b4a);">Créditos</button>
+        </div>
+    </div>
+
+    <div id="screen-lang-select" class="screen">
+        <button class="absolute top-4 left-4 z-50 glass-panel p-3 text-white rounded-full" onclick="showScreen('screen-menu')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        
+        <div class="glass-panel p-8 max-w-lg w-11/12 text-center">
+            <h2 class="text-3xl text-white mb-6 kid-font">Elige el idioma / Choose Language</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button class="btn kid-font text-xl" onclick="startGame('es')">Español / English</button>
+                <button class="btn kid-font text-xl" onclick="startGame('ind1')" style="background: linear-gradient(145deg, #5b8c5a, #3b5c3b);">Warao / English</button>
+                <button class="btn kid-font text-xl md:col-span-2" onclick="startGame('ind2')" style="background: linear-gradient(145deg, #d98a2c, #a86214);">Yanomami / English</button>
+            </div>
+            <p class="text-white mt-6 text-sm opacity-80">Las palabras de los idiomas pueden ser modificadas en el código según las necesidades de los instructores.</p>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen relative">
+        <button class="absolute top-4 left-4 z-50 glass-panel p-3 text-white rounded-full" onclick="showScreen('screen-menu')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+
+        <div class="flex flex-col md:flex-row items-center justify-center w-full h-full p-4 pt-16">
+            
+            <!-- Zona del Cuerpo (Izquierda/Centro) -->
+            <div class="relative w-full max-w-md h-3/5 md:h-4/5 flex justify-center items-center">
+                <!-- SVG Minimalista del Niño/Niña -->
+                <svg class="svg-body" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Base glow -->
+                    <defs>
+                        <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#ffdfc4" />
+                            <stop offset="100%" stop-color="#f0b27a" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Piernas -->
+                    <path d="M 80 250 L 80 350 A 10 10 0 0 0 100 350 L 100 250 Z" fill="url(#bodyGrad)"/>
+                    <path d="M 120 250 L 120 350 A 10 10 0 0 0 140 350 L 140 250 Z" fill="url(#bodyGrad)"/>
+                    <!-- Pies -->
+                    <path d="M 75 350 L 105 350 A 10 10 0 0 0 105 370 L 75 370 A 10 10 0 0 1 75 350 Z" fill="#e59866"/>
+                    <path d="M 115 350 L 145 350 A 10 10 0 0 0 145 370 L 115 370 A 10 10 0 0 1 115 350 Z" fill="#e59866"/>
+                    <!-- Brazos -->
+                    <path d="M 60 140 L 40 220 A 10 10 0 0 0 55 225 L 75 140 Z" fill="url(#bodyGrad)"/>
+                    <path d="M 140 140 L 160 220 A 10 10 0 0 1 145 225 L 125 140 Z" fill="url(#bodyGrad)"/>
+                    <!-- Manos -->
+                    <circle cx="45" cy="235" r="12" fill="#e59866"/>
+                    <circle cx="155" cy="235" r="12" fill="#e59866"/>
+                    <!-- Torso -->
+                    <rect x="70" y="130" width="60" height="120" rx="20" fill="#f8c471"/>
+                    <!-- Cuello -->
+                    <rect x="90" y="110" width="20" height="30" rx="5" fill="url(#bodyGrad)"/>
+                    <!-- Cabeza -->
+                    <circle cx="100" cy="70" r="45" fill="url(#bodyGrad)"/>
+                    <!-- Cara simple -->
+                    <circle cx="85" cy="65" r="4" fill="#5d4037"/>
+                    <circle cx="115" cy="65" r="4" fill="#5d4037"/>
+                    <path d="M 90 85 Q 100 95 110 85" stroke="#5d4037" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <!-- Cabello -->
+                    <path d="M 55 70 C 55 20, 145 20, 145 70 C 130 40, 70 40, 55 70 Z" fill="#5d4037"/>
+                </svg>
+
+                <!-- Zonas de Dropeo dinámicas -->
+                <div id="dropzones-container"></div>
+            </div>
+
+            <!-- Zona de Cartas (Derecha/Abajo) -->
+            <div id="cards-container" class="w-full md:w-1/3 h-2/5 md:h-full relative flex justify-center items-center">
+                <!-- Las cartas se inyectarán por JS aquí -->
+            </div>
+        </div>
+
+        <!-- Indicador de éxito -->
+        <div id="success-message" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 glass-panel p-8 text-center flex-col items-center z-50">
+            <h2 class="text-4xl text-yellow-300 kid-font mb-4">¡Muy Bien! / Very Good!</h2>
+            <div id="stars-container" class="flex gap-2 mb-6"></div>
+            <button class="btn kid-font" onclick="resetGame()">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <div id="screen-credits" class="screen">
+        <button class="absolute top-4 left-4 z-50 glass-panel p-3 text-white rounded-full" onclick="showScreen('screen-menu')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+
+        <div class="glass-panel p-8 max-w-2xl w-11/12 text-center text-white overflow-y-auto max-h-[80vh]">
+            <h2 class="text-4xl kid-font mb-8 text-yellow-200">Créditos</h2>
+            
+            <div class="space-y-8">
+                <div class="p-4 bg-white bg-opacity-10 rounded-xl">
+                    <h3 class="text-2xl font-bold mb-2">Creación y Desarrollo</h3>
+                    <p class="text-xl text-yellow-100">ZVAcademy - Proyecto ARIBU</p>
+                </div>
+
+                <div class="p-4 bg-white bg-opacity-10 rounded-xl">
+                    <h3 class="text-2xl font-bold mb-2">Diseño y Arte</h3>
+                    <p class="text-xl text-yellow-100">Geijutsu No Seishin</p>
+                </div>
+
+                <div class="p-4 bg-white bg-opacity-10 rounded-xl">
+                    <h3 class="text-2xl font-bold mb-2">En colaboración con</h3>
+                    <p class="text-xl text-yellow-100">E-VEN</p>
+                </div>
+
+                <p class="mt-8 text-sm opacity-75">
+                    Diseñado especialmente para la enseñanza bilingüe (Inglés/Español) 
+                    y preservación de lenguas nativas en el Amazonas venezolano. <br><br>
+                    Estética inspirada en la calma y minimalismo.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Base de datos de palabras (Adaptables por educadores. Aquí dejé placeholders base para warao y yanomami)
+        const vocabulary = [
+            { id: 'head',   x: '50%', y: '15%',  es: 'Cabeza',  en: 'Head',  ind1: 'Mahu',    ind2: 'Hoko' },
+            { id: 'arm',    x: '25%', y: '45%',  es: 'Brazo',   en: 'Arm',   ind1: 'Amuhu',   ind2: 'Poko' },
+            { id: 'hand',   x: '22%', y: '60%',  es: 'Mano',    en: 'Hand',  ind1: 'Amu',     ind2: 'Naka' },
+            { id: 'belly',  x: '50%', y: '45%',  es: 'Barriga', en: 'Belly', ind1: 'Oba',     ind2: 'Tuhu' },
+            { id: 'leg',    x: '40%', y: '75%',  es: 'Pierna',  en: 'Leg',   ind1: 'Noho',    ind2: 'Moko' },
+            { id: 'foot',   x: '40%', y: '90%',  es: 'Pie',     en: 'Foot',  ind1: 'Omu',     ind2: 'Mamo' }
+        ];
+
+        let currentLang = 'es'; 
+        let matchedCount = 0;
+        let activeCard = null;
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function startGame(lang) {
+            currentLang = lang;
+            matchedCount = 0;
+            document.getElementById('success-message').classList.add('hidden');
+            document.getElementById('stars-container').innerHTML = '';
+            
+            buildGameZones();
+            buildCards();
+            showScreen('screen-game');
+        }
+
+        function resetGame() {
+            startGame(currentLang);
+        }
+
+        function buildGameZones() {
+            const container = document.getElementById('dropzones-container');
+            container.innerHTML = '';
+            
+            vocabulary.forEach(part => {
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.style.left = part.x;
+                zone.style.top = part.y;
+                zone.dataset.id = part.id;
+                container.appendChild(zone);
+            });
+        }
+
+        function buildCards() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            
+            // Mezclar cartas
+            const shuffled = [...vocabulary].sort(() => Math.random() - 0.5);
+            
+            // Posiciones circulares para evitar que caigan unas sobre otras
+            const radius = window.innerWidth < 768 ? 120 : 160; 
+            
+            shuffled.forEach((part, index) => {
+                const card = document.createElement('div');
+                card.className = 'card kid-font';
+                
+                // Texto de la carta: Combina Español/Nativo y abajo el Inglés
+                let primaryWord = part.es;
+                if (currentLang === 'ind1') primaryWord = part.ind1;
+                if (currentLang === 'ind2') primaryWord = part.ind2;
+
+                card.innerHTML = `
+                    <div class="text-xl">${primaryWord}</div>
+                    <div class="text-sm opacity-70 text-gray-600">${part.en}</div>
+                `;
+                
+                card.dataset.id = part.id;
+
+                const angle = (index / shuffled.length) * Math.PI * 2;
+                const centerX = window.innerWidth < 768 ? window.innerWidth / 2 : (window.innerWidth * 0.75);
+                const centerY = window.innerWidth < 768 ? window.innerHeight * 0.8 : (window.innerHeight * 0.5);
+                
+                // Coordenadas relativas
+                const startX = centerX + radius * Math.cos(angle) - (window.innerWidth < 768 ? window.innerWidth/2 : window.innerWidth * 0.66) ;
+                const startY = centerY + radius * Math.sin(angle) - (window.innerWidth < 768 ? window.innerHeight * 0.8 : window.innerHeight/2);
+
+                card.style.transform = `translate(${startX}px, ${startY}px)`;
+                card.dataset.startX = startX;
+                card.dataset.startY = startY;
+                card.dataset.currX = startX;
+                card.dataset.currY = startY;
+
+                container.appendChild(card);
+
+                makeDraggable(card);
+            });
+        }
+
+        function makeDraggable(element) {
+            let startClientX = 0, startClientY = 0;
+            let currentX = parseFloat(element.dataset.startX);
+            let currentY = parseFloat(element.dataset.startY);
+            let isDragging = false;
+
+            element.addEventListener('pointerdown', (e) => {
+                if (element.classList.contains('matched-card')) return;
+                
+                isDragging = true;
+                activeCard = element;
+                element.classList.add('dragging');
+                
+                startClientX = e.clientX;
+                startClientY = e.clientY;
+                
+                currentX = parseFloat(element.dataset.currX);
+                currentY = parseFloat(element.dataset.currY);
+                
+                playTone(400, 'sine', 0.1);
+            });
+
+            document.addEventListener('pointermove', (e) => {
+                if (!isDragging || activeCard !== element) return;
+                e.preventDefault(); 
+
+                const dx = e.clientX - startClientX;
+                const dy = e.clientY - startClientY;
+                
+                const newX = currentX + dx;
+                const newY = currentY + dy;
+                
+                element.style.transform = `translate(${newX}px, ${newY}px)`;
+                checkHover(e.clientX, e.clientY, element.dataset.id);
+            }, { passive: false });
+
+            document.addEventListener('pointerup', (e) => {
+                if (!isDragging || activeCard !== element) return;
+                isDragging = false;
+                activeCard = null;
+                element.classList.remove('dragging');
+                
+                const dx = e.clientX - startClientX;
+                const dy = e.clientY - startClientY;
+                currentX += dx;
+                currentY += dy;
+                element.dataset.currX = currentX;
+                element.dataset.currY = currentY;
+
+                checkDrop(e.clientX, e.clientY, element);
+            });
+        }
+
+        function checkHover(x, y, cardId) {
+            const zones = document.querySelectorAll('.drop-zone');
+            zones.forEach(zone => {
+                if (zone.classList.contains('matched')) return;
+                
+                const rect = zone.getBoundingClientRect();
+                const isInside = x > rect.left - 20 && x < rect.right + 20 && 
+                                 y > rect.top - 20 && y < rect.bottom + 20;
+                                 
+                if (isInside) {
+                    zone.classList.add('hover');
+                } else {
+                    zone.classList.remove('hover');
+                }
+            });
+        }
+
+        function checkDrop(x, y, card) {
+            const cardId = card.dataset.id;
+            const zones = document.querySelectorAll('.drop-zone');
+            let matched = false;
+
+            zones.forEach(zone => {
+                zone.classList.remove('hover');
+                if (zone.classList.contains('matched')) return;
+
+                const rect = zone.getBoundingClientRect();
+                // Hitbox muy generosa para que los niños pequeños acierten fácilmente
+                const isInside = x > rect.left - 40 && x < rect.right + 40 && 
+                                 y > rect.top - 40 && y < rect.bottom + 40;
+
+                if (isInside && zone.dataset.id === cardId) {
+                    matched = true;
+                    zone.classList.add('matched');
+                    card.classList.add('matched-card');
+                    card.style.visibility = 'hidden'; 
+                    
+                    createParticles(rect.left + rect.width/2, rect.top + rect.height/2);
+                    playSuccessSound();
+                    
+                    matchedCount++;
+                    if (matchedCount === vocabulary.length) {
+                        setTimeout(showWinScreen, 1000);
+                    }
+                }
+            });
+
+            if (!matched) {
+                // Devolver la carta si no es el lugar correcto
+                card.style.transition = 'transform 0.3s ease-out';
+                const startX = card.dataset.startX;
+                const startY = card.dataset.startY;
+                card.style.transform = `translate(${startX}px, ${startY}px)`;
+                card.dataset.currX = startX;
+                card.dataset.currY = startY;
+                
+                setTimeout(() => { card.style.transition = 'none'; }, 300);
+                playTone(200, 'triangle', 0.1);
+            }
+        }
+
+        function showWinScreen() {
+            playWinMusic();
+            const winScreen = document.getElementById('success-message');
+            winScreen.classList.remove('hidden');
+            
+            const starsContainer = document.getElementById('stars-container');
+            for(let i=0; i<3; i++) {
+                setTimeout(() => {
+                    const star = document.createElement('div');
+                    star.innerHTML = '⭐';
+                    star.className = 'text-5xl animate-bounce';
+                    starsContainer.appendChild(star);
+                    playTone(600 + (i*200), 'sine', 0.1);
+                }, i * 300);
+            }
+        }
+
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function createParticles(x, y) {
+            const colors = ['#ffd56b', '#ff7b54', '#ffffff', '#a8e6cf'];
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    radius: Math.random() * 6 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1
+                });
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; 
+                p.life -= 0.02;
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fill();
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        let audioCtx;
+        let isMusicPlaying = false;
+        let musicInterval;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if(audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type = 'sine', duration = 0.5) {
+            if (!audioCtx) initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSuccessSound() {
+            playTone(440, 'sine', 0.2); 
+            setTimeout(() => playTone(554.37, 'sine', 0.2), 100);
+            setTimeout(() => playTone(659.25, 'sine', 0.4), 200); 
+        }
+        
+        function playWinMusic() {
+            const notes = [523.25, 659.25, 783.99, 1046.50]; 
+            notes.forEach((freq, i) => {
+                setTimeout(() => playTone(freq, 'triangle', 0.5), i * 150);
+            });
+        }
+
+        const scale = [261.63, 293.66, 329.63, 392.00, 440.00]; 
+        
+        function generativeMusicLoop() {
+            if (!isMusicPlaying) return;
+            
+            const freq = scale[Math.floor(Math.random() * scale.length)];
+            
+            if (audioCtx) {
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.value = freq / 2; 
+                
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 2); 
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 4); 
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 4);
+            }
+            
+            const nextTime = Math.random() * 2000 + 1000;
+            musicInterval = setTimeout(generativeMusicLoop, nextTime);
+        }
+
+        function toggleMusic() {
+            initAudio();
+            const icon = document.getElementById('music-icon');
+            
+            if (isMusicPlaying) {
+                isMusicPlaying = false;
+                clearTimeout(musicInterval);
+                icon.innerHTML = '<path d="M11 5L6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
+            } else {
+                isMusicPlaying = true;
+                generativeMusicLoop();
+                icon.innerHTML = '<path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>';
+            }
+        }
+
+        document.body.addEventListener('click', initAudio, { once: true });
+        document.body.addEventListener('touchstart', initAudio, { once: true });
+
+        document.addEventListener('touchmove', function(event) {
+            if (event.scale !== 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+    </script>
+</body>
+</html>
